@@ -1,0 +1,394 @@
+{
+  "info": {
+    "name": "LAB03 – Bookmarks API (API Key + Limit/Offset)",
+    "_postman_id": "lab3-bookmarks-col",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "A — Security (API Key)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.environment.set('ts', Date.now());"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "A1 GET /bookmarks bez klucza → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401',()=>pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A2 GET /bookmarks z kluczem → 200 (LimitOffsetPage)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200',()=>pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Has items[]',()=>pm.expect(Array.isArray(body.items)).to.be.true);",
+                  "pm.test('Has limit/offset/total',()=>{ pm.expect(body).to.have.property('limit'); pm.expect(body).to.have.property('offset'); pm.expect(body).to.have.property('total'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "B — CRUD Bookmarks + Pagination + q",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.environment.set('ts', Date.now());"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "B1 POST /bookmarks (create #1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bookmark-{{ts}}-1\",\n  \"url\": \"https://example.com/one\",\n  \"tags\": [\"lab\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201',()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json(); pm.expect(j).to.have.property('id'); pm.expect(j).to.have.property('created_at');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B2 POST /bookmarks (create #2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bookmark-{{ts}}-2\",\n  \"url\": \"https://example.com/two\",\n  \"tags\": [\"lab\",\"two\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201',()=>pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B3 GET /bookmarks?limit=1&offset=0&sort=desc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks?limit=1&offset=0&sort=desc"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200',()=>pm.response.to.have.status(200));",
+                  "const body=pm.response.json(); pm.test('Len==1',()=>pm.expect(body.items.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B4 GET /bookmarks?limit=1&offset=1&sort=desc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks?limit=1&offset=1&sort=desc"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200',()=>pm.response.to.have.status(200));",
+                  "const body=pm.response.json(); pm.test('Len==1',()=>pm.expect(body.items.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B5 GET /bookmarks?q=two",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks?q=two"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200',()=>pm.response.to.have.status(200));",
+                  "const body=pm.response.json(); pm.test('>=1 match',()=>pm.expect(body.items.length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B6 GET /bookmarks (store bookmarkId of first)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body=pm.response.json();",
+                  "pm.expect(body.items.length).to.be.above(0);",
+                  "pm.environment.set('bookmarkId', body.items[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B7 GET /bookmarks/{{bookmarkId}}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks/{{bookmarkId}}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B8 PUT /bookmarks/{{bookmarkId}}",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated-{{ts}}\",\n  \"url\": \"https://example.com/updated\",\n  \"tags\": [\"edit\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks/{{bookmarkId}}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200',()=>pm.response.to.have.status(200));",
+                  "pm.test('title updated',()=>pm.expect(pm.response.json().title).to.include('Updated-'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B9 DELETE /bookmarks/{{bookmarkId}}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks/{{bookmarkId}}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204',()=>pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B10 GET /bookmarks/{{bookmarkId}} (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookmarks/{{bookmarkId}}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404',()=>pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
